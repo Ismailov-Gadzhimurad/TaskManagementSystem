@@ -21,5 +21,12 @@ public class Task {
     private String title, description, status, priority, comment, author, executor;
 
     public Task(String title, String description, String status, String priority, String comment, String author, String executor) {
+        this.title = title;
+        this.description = description;
+        this.status = status;
+        this.priority = priority;
+        this.comment = comment;
+        this.author = author;
+        this.executor = executor;
     }
 }
