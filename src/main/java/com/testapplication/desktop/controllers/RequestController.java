@@ -1,6 +1,7 @@
 package com.testapplication.desktop.controllers;
 
 
+import com.testapplication.desktop.dto.TaskDTO;
 import com.testapplication.desktop.dto.UserDTO;
 import com.testapplication.desktop.models.MyUser;
 import com.testapplication.desktop.models.Task;
@@ -37,28 +38,19 @@ public class RequestController {
 
     @PostMapping("/add")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Map<String, Object>> PostTask(@RequestBody Map<String, String> requestBody) {
+    public ResponseEntity<Map<String, Object>> PostTask(@RequestBody TaskDTO taskDTO) {
         // Обработка тела запроса
-        System.out.println("POST request received:");
-        System.out.println(requestBody);
+        log.info("POST request received:");
+        System.out.println(taskDTO);
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         response.put("message", "POST request processed successfully");
 
 
-        String title = requestBody.get("title");
-        String description = requestBody.get("description");
-        String status = requestBody.get("status");
-        String priority = requestBody.get("priority");
-        String comment = requestBody.get("comment");
-        String author = requestBody.get("author");
-        String executor = requestBody.get("executor");
-
-
-
-        Task task = new Task(title, description, status, priority, comment, author, executor);
+        Task task = new Task(taskDTO.getTitle(), taskDTO.getDescription(),taskDTO.getStatus(),taskDTO.getPriority(), taskDTO.getComment(), taskDTO.getAuthor(), taskDTO.getExecutor());
         taskRepository.save(task);
+        log.info(task.toString());
         return new ResponseEntity<>(response, HttpStatus.OK);
 
 
@@ -91,57 +83,53 @@ public class RequestController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<String> deleteTask(@PathVariable("id") long id){
 
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new  IllegalArgumentException("invalid task id:" + id));
+        try {
+            Task task = taskRepository.findById(id)
+                    .orElseThrow(() -> new  IllegalArgumentException("invalid task id:" + id));
 
-        return new ResponseEntity<>("Задача удалена", HttpStatus.OK);
+            return new ResponseEntity<>("Задача удалена", HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
 
     }
 
 
     @PutMapping("update/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Task> updateTask(@PathVariable("id") long id, @RequestBody Map<String, String> requestBody) {
+    public ResponseEntity<Task> updateTask(@PathVariable("id") long id, @Validated @RequestBody TaskDTO taskDTO) {
 
 
 
 
         try {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new  IllegalArgumentException("invalid task id:" + id));
+            Task task = taskRepository.findById(id)
+                    .orElseThrow(() -> new  IllegalArgumentException("invalid task id:" + id));
+
+            task.setTitle(taskDTO.getTitle());
+
+            task.setTitle(taskDTO.getDescription());
+            task.setStatus(taskDTO.getStatus());
+            task.setPriority(taskDTO.getPriority());
+            task.setComment(taskDTO.getComment());
+            task.setAuthor(taskDTO.getAuthor());
+            task.setExecutor(taskDTO.getExecutor());
 
 
-        String description = requestBody.get("description");
-        if (description != null) task.setDescription(description);
 
-        String status = requestBody.get("status");
-        if (status != null) task.setStatus(status);
 
-        String comment = requestBody.get("comment");
-        if (comment != null) task.setComment(comment);
+            Task updatedTask = taskRepository.save(task);
+            return new ResponseEntity<>(updatedTask, HttpStatus.OK);
 
-        String author = requestBody.get("author");
-        if (author != null) task.setAuthor(author);
-
-        String executor = requestBody.get("executor");
-        if (executor != null) task.setExecutor(executor);
-
-        String priority = requestBody.get("priority");
-        if (priority != null) task.setPriority(priority);
-        if(task.getTitle() == null || task.getTitle().isEmpty())
-            throw new IllegalArgumentException("Title cannot be null or empty.");
-
-        Task updatedTask = taskRepository.save(task);
-        return new ResponseEntity<>(updatedTask, HttpStatus.OK);
-
-    } catch (ResourceNotFoundException e) {
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    } catch (IllegalArgumentException e) {
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-    } catch (Exception e) {
-        log.error("Error updating task: ", e);
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            log.error("Error updating task: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
     }
 
