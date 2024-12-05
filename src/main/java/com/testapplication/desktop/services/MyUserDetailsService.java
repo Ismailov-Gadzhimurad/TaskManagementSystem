@@ -20,10 +20,10 @@ import java.util.Optional;
 public class MyUserDetailsService implements UserDetailsService {
 
     @Autowired
-    private UserRepository userRepository; // Исправлено: userRepository
+    private UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Добавлено: PasswordEncoder для безопасного сравнения паролей
+    private PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -32,16 +32,14 @@ public class MyUserDetailsService implements UserDetailsService {
             Optional<MyUser> myUserOptional = userRepository.findByUsername(username);
             MyUser myUser = myUserOptional.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-            // Проверка на Null, хотя в идеале null не должен быть в базе
+
             if (myUser.getUsername() == null || myUser.getPassword() == null) {
                 throw new UsernameNotFoundException("Incomplete user data for: " + username);
             }
-            // Создаем объект MyUserDetails, используя MyUser из базы данных
             return new MyUserDetails(myUser);
 
         } catch (Exception ex) {
-            // Обработка исключений
-            throw new UsernameNotFoundException("Error loading user: " + username, ex); //Перехватываем все исключения для удобства
+            throw new UsernameNotFoundException("Error loading user: " + username, ex);
         }
     }
 }

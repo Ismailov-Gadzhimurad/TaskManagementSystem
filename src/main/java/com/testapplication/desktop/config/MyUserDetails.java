@@ -16,8 +16,6 @@ public class MyUserDetails implements UserDetails {
     public MyUserDetails(MyUser myUser) {
         this.myUser = myUser;
     }
-
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Arrays.stream(myUser.getRoles().split(", "))
@@ -28,28 +26,22 @@ public class MyUserDetails implements UserDetails {
     public String getPassword() {
         return myUser.getPassword();
     }
-
     @Override
     public String getUsername() {
         return myUser.getUsername();
     }
-
-
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
-
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
-
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
-
     @Override
     public boolean isEnabled() {
         return true;

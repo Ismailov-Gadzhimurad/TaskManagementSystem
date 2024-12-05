@@ -2,11 +2,8 @@ package com.testapplication.desktop.models;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
 @Entity
 @Table(name = "tasks")
 @AllArgsConstructor
@@ -17,6 +14,8 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Setter
+    @Getter
     @Column(unique = true)
     private String title, description, status, priority, comment, author, executor;
 

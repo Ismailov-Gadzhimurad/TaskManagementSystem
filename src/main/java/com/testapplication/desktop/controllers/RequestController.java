@@ -39,7 +39,6 @@ public class RequestController {
     @PostMapping("/add")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Map<String, Object>> PostTask(@RequestBody TaskDTO taskDTO) {
-        // Обработка тела запроса
         log.info("POST request received:");
         System.out.println(taskDTO);
 
@@ -100,28 +99,18 @@ public class RequestController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Task> updateTask(@PathVariable("id") long id, @Validated @RequestBody TaskDTO taskDTO) {
 
-
-
-
         try {
             Task task = taskRepository.findById(id)
                     .orElseThrow(() -> new  IllegalArgumentException("invalid task id:" + id));
-
             task.setTitle(taskDTO.getTitle());
-
             task.setTitle(taskDTO.getDescription());
             task.setStatus(taskDTO.getStatus());
             task.setPriority(taskDTO.getPriority());
             task.setComment(taskDTO.getComment());
             task.setAuthor(taskDTO.getAuthor());
             task.setExecutor(taskDTO.getExecutor());
-
-
-
-
             Task updatedTask = taskRepository.save(task);
             return new ResponseEntity<>(updatedTask, HttpStatus.OK);
-
         } catch (ResourceNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (IllegalArgumentException e) {
@@ -147,7 +136,8 @@ public class RequestController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e){
             log.error("error", e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);        }
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
     }
 

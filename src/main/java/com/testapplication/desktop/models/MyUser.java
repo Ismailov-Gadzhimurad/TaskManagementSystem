@@ -1,21 +1,21 @@
 package com.testapplication.desktop.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
 @Entity
 @Table(name = "users")
 @AllArgsConstructor
 @NoArgsConstructor
 public class MyUser {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Setter
+    @Getter
     @Column(unique = true)
     private String username, password, roles;
 
@@ -25,6 +25,7 @@ public class MyUser {
         this.password = password;
         this.roles = roles;
     }
+
 }
 
 
