@@ -38,7 +38,7 @@ public class RequestController {
 
     @PostMapping("/add")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Map<String, Object>> PostTask(@RequestBody TaskDTO taskDTO) {
+    public ResponseEntity<Map<String, Object>> PostTask(@Validated @RequestBody TaskDTO taskDTO) {
         log.info("POST request received:");
         System.out.println(taskDTO);
 
@@ -46,8 +46,16 @@ public class RequestController {
         response.put("status", "success");
         response.put("message", "POST request processed successfully");
 
+        String title, description, status, priority, comment, author, executor;
+        title = taskDTO.getTitle();
+        description = taskDTO.getDescription();
+        status = taskDTO.getStatus();
+        priority = taskDTO.getPriority();
+        comment = taskDTO.getComment();
+        author = taskDTO.getAuthor();
+        executor = taskDTO.getExecutor();
 
-        Task task = new Task(taskDTO.getTitle(), taskDTO.getDescription(),taskDTO.getStatus(),taskDTO.getPriority(), taskDTO.getComment(), taskDTO.getAuthor(), taskDTO.getExecutor());
+        Task task = new Task(title, description, status, priority, comment, author, executor);
         taskRepository.save(task);
         log.info(task.toString());
         return new ResponseEntity<>(response, HttpStatus.OK);

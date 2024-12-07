@@ -1,6 +1,7 @@
 package com.testapplication.desktop.security;
 
 import io.jsonwebtoken.*;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtProvider {
 
-    private final String JWT_SECRET = "your-secret-key"; // Замените на сильный секретный ключ!
+    private final String JWT_SECRET = "salfetka_5_nah"; // Замените на сильный секретный ключ!
     private final long JWT_EXPIRATION = 604800000; // 7 дней
 
     public String generateToken(Authentication authentication) {
