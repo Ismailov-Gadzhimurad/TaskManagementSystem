@@ -7,12 +7,14 @@ import com.testapplication.desktop.models.MyUser;
 import com.testapplication.desktop.models.Task;
 import com.testapplication.desktop.repo.TaskRepository;
 import com.testapplication.desktop.repo.UserRepository;
+import com.testapplication.desktop.security.JwtProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -138,9 +140,12 @@ public class RequestController {
             MyUser user = new MyUser(UserDTO.getUsername(), UserDTO.getPassword(), UserDTO.getRoles());
             System.out.println(user);
             userRepository.save(user);
+            JwtProvider jwtProvider = new JwtProvider();
+
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             response.put("message", "POST request processed successfully");
+            response.put("token", jwtProvider.generateToken((Authentication) user));
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e){
             log.error("error", e);

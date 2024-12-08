@@ -14,8 +14,8 @@ public class MyUser {
     private long id;
 
     @Column(unique = true)
-    private String username, password, roles;
-
+    private String username, password;
+    private String roles;
     public String getUsername() {
         return username;
     }
