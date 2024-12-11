@@ -15,7 +15,12 @@ public class MyUser {
 
     @Column(unique = true)
     private String username, password;
+
+    @Column(unique = false)
     private String roles;
+
+
+
     public String getUsername() {
         return username;
     }

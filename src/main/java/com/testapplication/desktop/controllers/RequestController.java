@@ -2,19 +2,23 @@ package com.testapplication.desktop.controllers;
 
 
 import com.testapplication.desktop.dto.TaskDTO;
-import com.testapplication.desktop.dto.UserDTO;
 import com.testapplication.desktop.models.MyUser;
 import com.testapplication.desktop.models.Task;
 import com.testapplication.desktop.repo.TaskRepository;
 import com.testapplication.desktop.repo.UserRepository;
 import com.testapplication.desktop.security.JwtProvider;
+import com.testapplication.desktop.services.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -31,55 +35,33 @@ public class RequestController {
 
     public final TaskRepository taskRepository;
     public final UserRepository userRepository;
+    public final TaskService taskService;
 
-    public RequestController(TaskRepository taskRepository, UserRepository userRepository) {
+    @Autowired
+    public RequestController(TaskRepository taskRepository, UserRepository userRepository, TaskService taskService) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
+        this.taskService = taskService;
     }
 
 
     @PostMapping("/add")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Map<String, Object>> PostTask(@Validated @RequestBody TaskDTO taskDTO) {
-        log.info("POST request received:");
-        System.out.println(taskDTO);
+    public ResponseEntity<Map<String, Object>> PostTaskRequest(@Validated @RequestBody TaskDTO taskDTO) {
 
+        taskService.postTask(taskDTO);
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         response.put("message", "POST request processed successfully");
-
-        String title, description, status, priority, comment, author, executor;
-        title = taskDTO.getTitle();
-        description = taskDTO.getDescription();
-        status = taskDTO.getStatus();
-        priority = taskDTO.getPriority();
-        comment = taskDTO.getComment();
-        author = taskDTO.getAuthor();
-        executor = taskDTO.getExecutor();
-
-        Task task = new Task(title, description, status, priority, comment, author, executor);
-        taskRepository.save(task);
-        log.info(task.toString());
         return new ResponseEntity<>(response, HttpStatus.OK);
-
-
-
-
-
-
-
     }
 
     @GetMapping("/read/{id}")
     @PreAuthorize("hasAuthority('ROLE_USER')")
-    public ResponseEntity<Task> getTask(@PathVariable("id") long id) {
+    public ResponseEntity<Task> getTaskRequest(@PathVariable("id") long id) {
         try {
             Optional<Task> optionalTask = taskRepository.findById(id);
-            if (optionalTask.isPresent()) {
-                return new ResponseEntity<>(optionalTask.get(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
+            return optionalTask.map(task -> new ResponseEntity<>(task, HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
         } catch (DataAccessException ex) {
 
             log.error("Database error while fetching task: ", ex);
@@ -90,12 +72,10 @@ public class RequestController {
 
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> deleteTask(@PathVariable("id") long id){
+    public ResponseEntity<String> deleteTaskRequest(@PathVariable("id") long id){
 
         try {
-            Task task = taskRepository.findById(id)
-                    .orElseThrow(() -> new  IllegalArgumentException("invalid task id:" + id));
-
+            Task task = taskRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Задача с ID " + id + " не найдена"));
             return new ResponseEntity<>("Задача удалена", HttpStatus.OK);
         } catch (Exception e){
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -107,24 +87,17 @@ public class RequestController {
 
     @PutMapping("update/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Task> updateTask(@PathVariable("id") long id, @Validated @RequestBody TaskDTO taskDTO) {
+    public ResponseEntity<Task> updateTaskRequest(@PathVariable("id") long id, @Validated @RequestBody TaskDTO taskDTO) {
 
         try {
-            Task task = taskRepository.findById(id)
-                    .orElseThrow(() -> new  IllegalArgumentException("invalid task id:" + id));
-            task.setTitle(taskDTO.getTitle());
-            task.setTitle(taskDTO.getDescription());
-            task.setStatus(taskDTO.getStatus());
-            task.setPriority(taskDTO.getPriority());
-            task.setComment(taskDTO.getComment());
-            task.setAuthor(taskDTO.getAuthor());
-            task.setExecutor(taskDTO.getExecutor());
-            Task updatedTask = taskRepository.save(task);
-            return new ResponseEntity<>(updatedTask, HttpStatus.OK);
-        } catch (ResourceNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            taskService.updateTask(id, taskDTO);
+            return new ResponseEntity<>(HttpStatus.OK);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            log.error("Error updating task: ", e);
+            throw new RuntimeException(e);
+        } catch (ResourceNotFoundException e) {
+            log.error("Error updating task: ", e);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             log.error("Error updating task: ", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -133,20 +106,21 @@ public class RequestController {
     }
 
 
-    @PostMapping("/new-user")
-    public ResponseEntity<Map<String, Object>> addUser(@Validated @RequestBody UserDTO UserDTO) {
+    @PostMapping("/")
+    public ResponseEntity<Map<String, Object>> addUserRequest(@Validated @RequestBody UserDTO UserDTO, @Autowired JwtProvider jwtProvider,
+                                                              @Autowired AuthenticationManager authenticationManager,
+                                                              @Autowired PasswordEncoder passwordEncoder) {
         try {
             log.info(String.valueOf(UserDTO));
-            MyUser user = new MyUser(UserDTO.getUsername(), UserDTO.getPassword(), UserDTO.getRoles());
-            System.out.println(user);
+            String username = UserDTO.getUsername();
+            String password = UserDTO.getPassword();
+            String roles = UserDTO.getRoles();
+            MyUser user = new MyUser(username, password, roles);
             userRepository.save(user);
-            JwtProvider jwtProvider = new JwtProvider();
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("message", "POST request processed successfully");
-            response.put("token", jwtProvider.generateToken((Authentication) user));
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            String token = jwtProvider.generateToken(authentication);
+            return ResponseEntity.ok(Map.of("status", "success", "message", "User added successfully", "token", token));
         } catch (Exception e){
             log.error("error", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
