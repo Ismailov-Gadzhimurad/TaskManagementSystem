@@ -1,30 +1,22 @@
 package com.testapplication.desktop.services;
 
-
-import com.testapplication.desktop.config.MyUserDetails;
 import com.testapplication.desktop.models.MyUser;
 import com.testapplication.desktop.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-
-
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+public class MyUserServiceImpl implements MyUserService{
 
-@Service
-public class MyUserDetailsService implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -36,10 +28,19 @@ public class MyUserDetailsService implements UserDetailsService {
             if (myUser.getUsername() == null || myUser.getPassword() == null) {
                 throw new UsernameNotFoundException("Incomplete user data for: " + username);
             }
-            return new MyUserDetails(myUser);
+            return new MyUser();
 
         } catch (Exception ex) {
             throw new UsernameNotFoundException("Error loading user: " + username, ex);
         }
+    }
+
+    @Override
+    public boolean existsByUsername(String username) {
+        MyUser myUser = userRepository.findByUsername(username).orElse(null);
+        if (myUser != null) {
+            return true;
+        }
+        return false;
     }
 }

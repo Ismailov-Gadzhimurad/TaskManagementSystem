@@ -2,11 +2,13 @@ package com.testapplication.desktop.controllers;
 
 
 import com.testapplication.desktop.dto.TaskDTO;
+import com.testapplication.desktop.dto.UserDTO;
 import com.testapplication.desktop.models.MyUser;
+import com.testapplication.desktop.models.Role;
 import com.testapplication.desktop.models.Task;
 import com.testapplication.desktop.repo.TaskRepository;
 import com.testapplication.desktop.repo.UserRepository;
-import com.testapplication.desktop.security.JwtProvider;
+import com.testapplication.desktop.services.JwtService;
 import com.testapplication.desktop.services.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,7 @@ public class RequestController {
 
 
     @PostMapping("/add")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> PostTaskRequest(@Validated @RequestBody TaskDTO taskDTO) {
 
         taskService.postTask(taskDTO);
@@ -57,7 +59,7 @@ public class RequestController {
     }
 
     @GetMapping("/read/{id}")
-    @PreAuthorize("hasAuthority('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Task> getTaskRequest(@PathVariable("id") long id) {
         try {
             Optional<Task> optionalTask = taskRepository.findById(id);
@@ -71,7 +73,7 @@ public class RequestController {
 
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteTaskRequest(@PathVariable("id") long id){
 
         try {
@@ -86,7 +88,7 @@ public class RequestController {
 
 
     @PutMapping("update/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Task> updateTaskRequest(@PathVariable("id") long id, @Validated @RequestBody TaskDTO taskDTO) {
 
         try {
@@ -104,31 +106,4 @@ public class RequestController {
         }
 
     }
-
-
-    @PostMapping("/")
-    public ResponseEntity<Map<String, Object>> addUserRequest(@Validated @RequestBody UserDTO UserDTO, @Autowired JwtProvider jwtProvider,
-                                                              @Autowired AuthenticationManager authenticationManager,
-                                                              @Autowired PasswordEncoder passwordEncoder) {
-        try {
-            log.info(String.valueOf(UserDTO));
-            String username = UserDTO.getUsername();
-            String password = UserDTO.getPassword();
-            String roles = UserDTO.getRoles();
-            MyUser user = new MyUser(username, password, roles);
-            userRepository.save(user);
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
-
-            String token = jwtProvider.generateToken(authentication);
-            return ResponseEntity.ok(Map.of("status", "success", "message", "User added successfully", "token", token));
-        } catch (Exception e){
-            log.error("error", e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-    }
-
-
-
-
 }
